@@ -372,7 +372,7 @@ function onAddMarker(place) {
 
 
 function onClickLink(lat, lng) {
-    const appUrl = 'https://github.io/me/travelTip/index.html';
+    const appUrl = 'https://github.com/adirahav/TravelTip/blob/main/index.html';
 
     const link = `${appUrl}?lat=${lat}&lng=${lng}`;
     
