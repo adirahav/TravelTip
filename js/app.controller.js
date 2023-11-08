@@ -19,47 +19,48 @@ const LOCS_PAGING_SIZE = 10
 
 // == On Init =======================
 
-function onInit() {
+async function onInit() {
     // load map
     $("#map").height($("#map").width());
 
-    mapService.initMap()
-        .then(() => {
-            // default place    //http://localhost:3000/index.html?lat=3.14&lng=1.63
-            var urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('lat') && urlParams.has('lng')) {
-                var coords = {
-                    lat: parseFloat(urlParams.get('lat')), 
-                    lng: parseFloat(urlParams.get('lng'))
-                }
-                placeService.pickPlace(coords, renderSearchPlace);
-            }   
-            else {
-                $(".current-location").html("<h2>Location:</h2><span>Location not set yet</span>");
-
-                // locations table
-                onGetLocs()
-            } 
-
-            // saved markers
-            mapService.getAllMarkers()
-            
-            // click event listener to the map
-            mapService.getMap().addListener('click', (event) => {
-                const coords = {
-                    lat: event.latLng.lat(),
-                    lng: event.latLng.lng(),
-                };
-
-                _onPickPlace(coords);
-            });
-        })
-        .catch(() => console.log('Error: cannot init map'))
+    try {
+        await mapService.initMap()
+        var urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('lat') && urlParams.has('lng')) {
+            var coords = {
+                lat: parseFloat(urlParams.get('lat')), 
+                lng: parseFloat(urlParams.get('lng'))
+            }
+            await placeService.pickPlace(coords, renderSearchPlace);
+        }   
+        else {
+            $(".current-location").html("<h2>Location:</h2><span>Location not set yet</span>");
+    
+            // locations table
+            await onGetLocs()
+        } 
+    
+        // saved markers
+        await mapService.getAllMarkers()
+        
+        // click event listener to the map
+        mapService.getMap().addListener('click', (event) => {
+            const coords = {
+                lat: event.latLng.lat(),
+                lng: event.latLng.lng(),
+            };
+    
+            _onPickPlace(coords);
+        });
+    }
+    catch(err) {
+        throw new Error (err)
+    }
 }
 
 // == My Location ===================
-function onGetUserPos() {
-    placeService.getUserPosition(renderPlace);
+async function onGetUserPos() {
+    await placeService.getUserPosition(renderPlace);
 }
 
 function renderPlace(place) {
@@ -104,8 +105,8 @@ function renderPlace(place) {
 
 var gLocsCurrentPageNumber = 1
 
-function onGetLocs() {
-    locService.getLocs(gLocsCurrentPageNumber, LOCS_PAGING_SIZE, renderLocations)
+async function onGetLocs() {
+    await locService.getLocs(gLocsCurrentPageNumber, LOCS_PAGING_SIZE, renderLocations)
 }
 
 function renderLocations(result) {
@@ -224,9 +225,9 @@ function buildLocationPaging(totalEntities) {
 }
 
 // -- sorting ---------
-function onSortLocs(elLi, direction) {
+async function onSortLocs(elLi, direction) {
     gLocsCurrentPageNumber = 1;
-    locService.sortLocs(
+    await locService.sortLocs(
         { fieldName: gSelectedLocsMenuSortBy, direction: direction }, 
         { pageNumber: gLocsCurrentPageNumber , itemsPerPage: LOCS_PAGING_SIZE }, 
         renderLocations
@@ -234,13 +235,13 @@ function onSortLocs(elLi, direction) {
 }
 
 // -- grouping ---------
-function onGroupLocs(elLi) {
+async function onGroupLocs(elLi) {
     if ($(elLi).hasClass("disabled")) {
         return
     }
 
     gLocsCurrentPageNumber = 1;
-    locService.groupLocs(
+    await locService.groupLocs(
         gSelectedLocsMenuGroupBy, 
         renderGroupLocations
     )
@@ -301,8 +302,8 @@ function renderGroupLocations(result) {
 
 // == Delete Place ==================
 
-function onDeletePlace(uuid) {
-    placeService.deletePlace(uuid, renderDeletePlace)
+async function onDeletePlace(uuid) {
+    await placeService.deletePlace(uuid, renderDeletePlace)
 }
 
 function renderDeletePlace() {
@@ -328,11 +329,11 @@ function onPanTo(place) {
 
 // == Search Place ==================
 
-function onSearchPlace(ev) {
+async function onSearchPlace(ev) {
     ev.preventDefault()
     const address = $('input[name="search"]').val();
     if (address != "") {
-        placeService.searchPlace(address, renderSearchPlace);
+        await placeService.searchPlace(address, renderSearchPlace);
     }
 }
 
@@ -353,8 +354,8 @@ function renderSearchPlace(place) {
 
 // == Pick Place ====================
 
-function _onPickPlace(coords) {
-    placeService.pickPlace(coords, renderPickPlace);
+async function _onPickPlace(coords) {
+    await placeService.pickPlace(coords, renderPickPlace);
 }
 
 function renderPickPlace(place) {
@@ -366,8 +367,8 @@ function renderPickPlace(place) {
 
 // == Add Marker ====================
 
-function onAddMarker(place) {
-    mapService.addMarker(place)
+async function onAddMarker(place) {
+    await mapService.addMarker(place)
 }
 
 

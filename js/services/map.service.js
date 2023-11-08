@@ -14,18 +14,21 @@ export const mapService = {
 
 var gMap
 
-function initMap(lat = 32.0749831, lng = 34.9120554) {
+async function initMap(lat = 32.0749831, lng = 34.9120554) {
     console.log('InitMap')
-    return _connectGoogleApi()
-        .then(() => {
-            console.log('google available')
-            gMap = new google.maps.Map(
-                document.querySelector('#map'), {
-                center: { lat, lng },
-                zoom: 15
-            })
-            console.log('Map!', gMap)
+    try {
+        await _connectGoogleApi()
+        console.log('initMap() google available')
+        gMap = new google.maps.Map(
+            document.querySelector('#map'), {
+            center: { lat, lng },
+            zoom: 15
         })
+        console.log('initMap() gMap =', gMap)
+    }
+    catch(err) {
+        new Error(`initMap() Error ${err}`)
+    }
 }
 
 function getMap() {
@@ -37,31 +40,34 @@ function panTo(lat, lng) {
     gMap.panTo(laLatLng)
 }
 
-function _connectGoogleApi() {
-    if (window.google) return Promise.resolve()
-    const API_KEY = 'AIzaSyCvYLSwwat03jpxCajsKKqPBiJC77HsApE' 
-    var elGoogleApi = document.createElement('script')
-    elGoogleApi.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}`
-    elGoogleApi.async = true
-    elGoogleApi.defer = true
-    document.body.append(elGoogleApi)
+async function _connectGoogleApi() {
+    if (window.google) return;
 
-    return new Promise((resolve, reject) => {
-        elGoogleApi.onload = resolve
-        elGoogleApi.onerror = () => reject('Google script failed to load')
-    })
+    const API_KEY = 'AIzaSyCvYLSwwat03jpxCajsKKqPBiJC77HsApE';
+    const elGoogleApi = document.createElement('script');
+    elGoogleApi.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}`;
+    elGoogleApi.async = true;
+    elGoogleApi.defer = true;
+
+    document.body.append(elGoogleApi);
+
+    await new Promise((resolve, reject) => {
+        elGoogleApi.onload = resolve;
+        elGoogleApi.onerror = () => reject('Google script failed to load');
+    });
 }
 
 // == Marker ========================
 
-function addMarker(loc) {
+async function addMarker(loc) {
+    
     var marker = new google.maps.Marker({
         position: { lat: loc.coords.latitude, lng: loc.coords.longitude },
         map: gMap,
         title: loc.address
     })
 
-    _saveToStorage({
+    await _saveToStorage({
         position: { lat: loc.coords.latitude, lng: loc.coords.longitude },
         title: loc.address
     });
@@ -69,60 +75,57 @@ function addMarker(loc) {
     return marker
 }
 
-function getAllMarkers() {
-    var markers = storageService.query() || []
-
-    storageService.query(MARKERS_STORAGE_DB)
-            .then(markers => {
-                markers.map((m) => {
-                    var marker = new google.maps.Marker({
-                        position: { lat: m.position.lat, lng: m.position.lng },
-                        map: gMap,
-                        title: m.title
-                    })
-
-                })
-            });
+async function getAllMarkers() {
+    try {
+        const result = await storageService.query(MARKERS_STORAGE_DB);
+        const markers = Array.from(result);
+        markers.forEach((m) => {
+            new google.maps.Marker({
+                position: { lat: m.position.lat, lng: m.position.lng },
+                map: gMap,
+                title: m.title
+            })
+        })
+    }
+    catch(err) {
+        new Error(`getAllMarkers() error: ${err}`);
+    }
+    
 
 }
 
 // == Storage =======================
 
-function _saveToStorage(marker) {
+async function _saveToStorage(marker) {
     
     const filter = (m) => {
         return m.position.lat === marker.position.lat && m.position.lng === marker.position.lng;
     };
     
-    return new Promise((resolve, reject) => {    
-        storageService.filter(MARKERS_STORAGE_DB, filter)
-            .then(markers => {
-                if (markers.length == 0) {
-                    marker.createdAt =  marker.updatedAt = Date.now();
-                        storageService.post(MARKERS_STORAGE_DB, marker)
-                            .then(newMarker => {
-                                resolve(newMarker);
-                            })
-                            .catch(error => {
-                                reject(error);
-                            }); 
-                }
-                else {
-                    let desireMarker = markers[0];
-                        desireMarker.title = marker.title;
-                        desireMarker.updatedAt = Date.now();
-                        storageService.put(MARKERS_STORAGE_DB, desireMarker)
-                            .then(updatedMarker => {
-                                resolve(updatedMarker);
-                            })
-                            .catch(error => {
-                                reject(error);
-                            });   
-                }
-            })
-            .catch(error => {
-                reject(error);
-            });
-    });    
+    var markers = await storageService.filter(MARKERS_STORAGE_DB, filter)
+    if (markers.length == 0) {
+        marker.createdAt =  marker.updatedAt = Date.now();
+
+        try {
+            var newMarker = await storageService.post(MARKERS_STORAGE_DB, marker)
+            return newMarker;
+        }
+        catch(error) {
+            new Error(`_saveToStorage() Error: ${error}`)
+        }
+    }
+    else {
+        let existMarker = markers[0];
+        existMarker.title = marker.title;
+        existMarker.updatedAt = Date.now();
+        
+        try {
+            var updatedMarker = await storageService.put(MARKERS_STORAGE_DB, existMarker)
+            return updatedMarker;
+        }
+        catch(error) {
+            new Error(`_saveToStorage() Error: ${error}`)
+        } 
+    }  
 }
 

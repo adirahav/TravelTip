@@ -45,38 +45,36 @@ export const weatherService = {
 
 const API_KEY = 'b7e444e58d9eb9844a6f379e978361f3' 
 
-function getPlaceWeather(pos) {
-    return new Promise((resolve, reject) => {
-        
-        const apiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&appid=${API_KEY}`;
-        
-        fetch(apiUrl)
-            .then(response => response.json())
-            .then(data => {
-                const temperature = data.main.temp;
-                const description = data.weather[0].description;
-                const city = data.name;
-                
-                resolve({
-                    temperature: {
-                        Kelvin: temperature, 
-                        celsius: temperature - 273.15, 
-                        fahrenheit: (temperature - 273.15) * 1.8 + 32,
-                        range: {        // not available for free subscription
-                            from: (temperature - 273.15 - 1),
-                            to: (temperature - 273.15 + 1)
-                        },
-                        wind: 4.6       // not available for free subscription
-                    },
-                    description: description,
-                    city: city
-                }); 
-            })
-            .catch(error => {
-                reject(error);
-            });
-        
-    });
-}
+async function getPlaceWeather(pos) {
+    const apiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&appid=${API_KEY}`;
 
+    try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+            throw new Error(`Weather data request failed with status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const temperature = data.main.temp;
+        const description = data.weather[0].description;
+        const city = data.name;
+
+        return {
+            temperature: {
+                Kelvin: temperature,
+                celsius: temperature - 273.15,
+                fahrenheit: (temperature - 273.15) * 1.8 + 32,
+                range: {        // not available for free subscription
+                    from: (temperature - 273.15 - 1),
+                    to: (temperature - 273.15 + 1)
+                },
+                wind: 4.6       // not available for free subscription
+            },
+            description: description,
+            city: city
+        };
+    } catch (error) {
+        throw new Error(error);
+    }
+}
 

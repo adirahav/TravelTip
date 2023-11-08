@@ -11,40 +11,33 @@ export const locService = {
     LOCATIONS_STORAGE_DB
 }
 
-function getLocs(pageNumber, itemsPerPage, onSuccess) {
-    // load from storage
-    return new Promise((resolve, reject) => {    
-        storageService.paging(LOCATIONS_STORAGE_DB, pageNumber, itemsPerPage)
-        .then(locations => {
-            resolve(onSuccess(locations)); 
-        })
-        .catch(error => {
-            reject(error);
-        });
-    });
+async function getLocs(pageNumber, itemsPerPage, onSuccess) {
+    try {
+        var locations = await storageService.paging(LOCATIONS_STORAGE_DB, pageNumber, itemsPerPage);
+        onSuccess(locations);
+    }
+    catch(err) {
+        console.log(`getLocs() Error: ${err}`);
+    } 
 }
 
-function sortLocs(order, pagination, onSuccess) {
-    return new Promise((resolve, reject) => {    
-        storageService.sort(LOCATIONS_STORAGE_DB, order, pagination)
-        .then(locations => {
-            resolve(onSuccess(locations)); 
-        })
-        .catch(error => {
-            reject(error);
-        });
-    });
+async function sortLocs(order, pagination, onSuccess) {
+    try {
+        var locations = await storageService.sort(LOCATIONS_STORAGE_DB, order, pagination);
+        onSuccess(locations);
+    }
+    catch(err) {
+        console.log(`sortLocs() Error: ${err}`);
+    } 
 }
 
-function groupLocs(fieldName, onSuccess) {
-    return new Promise((resolve, reject) => {    
-        storageService.group(LOCATIONS_STORAGE_DB, fieldName)
-        .then(locations => {
-            resolve(onSuccess(locations)); 
-        })
-        .catch(error => {
-            reject(error);
-        });
-    });
+async function groupLocs(fieldName, onSuccess) {
+    try {
+        var locations = await storageService.group(LOCATIONS_STORAGE_DB, fieldName);
+        onSuccess(locations);
+    }
+    catch(err) {
+        reject(new Error(`groupLocs() Error: ${err}`));
+    } 
 }
 

@@ -1,6 +1,5 @@
 export const utilitiesService = {
-    stringFormat,
-    saveToStorage
+    stringFormat
 }
 
 function stringFormat(str) {
@@ -8,8 +7,4 @@ function stringFormat(str) {
         i = 0;
 
     return str.replace(/%s/g, () => args[i++]);
-}
-
-function saveToStorage(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
 }

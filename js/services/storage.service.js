@@ -8,109 +8,122 @@ export const storageService = {
     sort,
     group,
     filter
-
 }
 
 // == Create ================================
-function post(entityType, newEntity) {
+async function post(entityType, newEntity) {
     newEntity = JSON.parse(JSON.stringify(newEntity))
     newEntity.uuid = _generateUUID()
-    return query(entityType).then(entities => {
-        entities.push(newEntity)
-        _save(entityType, entities)
-        return newEntity
-    })
+    
+    var entities = await query(entityType);
+    entities.push(newEntity);
+
+    _save(entityType, entities);
+
+    return newEntity;
 }
 
 // == Read ==================================
-function get(entityType, entityUUID) {
-    return query(entityType).then(entities => {
-        const entity = entities.find(entity => entity.uuid === entityUUID)
-        if (!entity) throw new Error(`Get failed, cannot find entity with uuid: ${entityUUID} in: ${entityType}`)
-        return entity
-    })
+async function get(entityType, entityUUID) {
+    var entities = await query(entityType);
+    const entity = entities.find(entity => entity.uuid === entityUUID);
+    if (!entity) throw new Error(`Get failed, cannot find entity with uuid: ${entityUUID} in: ${entityType}`)
+    return entity
 }
 
 // == Update ================================
-function put(entityType, updatedEntity) {
+async function put(entityType, updatedEntity) {
     updatedEntity = JSON.parse(JSON.stringify(updatedEntity))
-    return query(entityType).then(entities => {
-        const uuidx = entities.findIndex(entity => entity.uuid === updatedEntity.uuid)
-        if (uuidx < 0) throw new Error(`Update failed, cannot find entity with id: ${entityUUID} in: ${entityType}`)
-        entities.splice(uuidx, 1, updatedEntity)
-        _save(entityType, entities)
-        return updatedEntity
-    })
+    
+    var entities = await query(entityType);
+    const uuidx = entities.findIndex(entity => entity.uuid === updatedEntity.uuid);
+    if (uuidx < 0) throw new Error(`Update failed, cannot find entity with id: ${entityUUID} in: ${entityType}`);
+    entities.splice(uuidx, 1, updatedEntity);
+    _save(entityType, entities);
+    return updatedEntity;  
 }
 
 // == Delete ================================
-function remove(entityType, entityUUID) {
-    return query(entityType).then(entities => {
-        const uuidx = entities.findIndex(entity => entity.uuid === entityUUID)
-        if (uuidx < 0) throw new Error(`Remove failed, cannot find entity with uuid: ${entityUUID} in: ${entityType}`)
-        entities.splice(uuidx, 1)
-        _save(entityType, entities)
-        return entities
-    })
+async function remove(entityType, entityUUID) {
+    var entities = await query(entityType);
+    const uuidx = entities.findIndex(entity => entity.uuid === entityUUID)
+    if (uuidx < 0) throw new Error(`Remove failed, cannot find entity with uuid: ${entityUUID} in: ${entityType}`)
+    entities.splice(uuidx, 1)
+    _save(entityType, entities)
+    return entities
 }
 
 // == List ==================================
-function query(entityType, delay = 0) {
-    var entities = JSON.parse(localStorage.getItem(entityType)) || []
-    return new Promise(resolve => setTimeout(() => resolve(entities), delay))
+async function query(entityType, delay = 0) {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            const entities = JSON.parse(localStorage.getItem(entityType)) || [];
+            resolve(entities);
+        }, delay);
+    });
 }
 
 // == Paging ================================
-function paging(entityType, page, itemsPerPage) {
-    return query(entityType).then(entities => {
+async function paging(entityType, page, itemsPerPage) {
+    try {
+        var entities = await query(entityType);
+
         const startIndex = (page - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
         const pagedEntities = entities.slice(startIndex, endIndex);
+        
         const result = {
             pagedEntities,
             totalEntities: entities.length
         };
         return result;
-    });
+        
+    }
+    catch(err) {
+        throw new Error(err);
+    }
+    
 }
 
 // == Sort ==================================
-function sort(entityType, order, pagination) {
-    return query(entityType).then(entities => {
-        entities.sort((a, b) => {
-            if (order.direction === 'asc') {
-                return eval("a." + order.fieldName) < eval("b." + order.fieldName) ? -1 : 1;
-            } 
-            else if (order.direction === 'desc') {
-                return eval("a." + order.fieldName) > eval("b." + order.fieldName) ? -1 : 1;
-            }
-        });
-        _save(entityType, entities);
-        return paging(entityType, pagination.pageNumber, pagination.itemsPerPage);
+async function sort(entityType, order, pagination) {
+    var entities = await query(entityType);
+    
+    entities.sort((a, b) => {
+        if (order.direction === 'asc') {
+            return eval("a." + order.fieldName) < eval("b." + order.fieldName) ? -1 : 1;
+        } 
+        else if (order.direction === 'desc') {
+            return eval("a." + order.fieldName) > eval("b." + order.fieldName) ? -1 : 1;
+        }
     });
+
+    _save(entityType, entities);
+    
+    return paging(entityType, pagination.pageNumber, pagination.itemsPerPage); 
 }
 
 // == Group =================================
-function group(entityType, fieldName) {
-    return query(entityType).then(entities => {
-        const groupedEntities = entities.reduce((result, entity) => {
-            const key = eval("entity." + fieldName);
-            if (!result[key]) {
-                result[key] = [];
-            }
-            result[key].push(entity);
-            return result;
-        }, {});
-        return groupedEntities;
-    });
+async function group(entityType, fieldName) {
+    var entities = await query(entityType)
+    
+    const groupedEntities = entities.reduce((result, entity) => {
+        const key = eval("entity." + fieldName);
+        if (!result[key]) {
+            result[key] = [];
+        }
+        result[key].push(entity);
+        return result;
+    }, {});
+
+    return groupedEntities;
 }
 
 // == Filter ================================
-function filter(entityType, filterFunction) {
-    return query(entityType).then(entities => {
-        const filteredEntities = entities.filter(filterFunction);
-        return filteredEntities;
-    });
+async function filter(entityType, filterFunction) {
+    var entities = await query(entityType);
+    const filteredEntities = entities.filter(filterFunction);
+    return filteredEntities;
 }
 
 // == Private Functions =====================

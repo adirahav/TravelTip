@@ -9,7 +9,7 @@
     --palette7: #ee9420;
     --palette8: #ca200d;
     --palette9: #8b2d29;
-     --palette10: #333333;
+    --palette10: #333333;
 
     /** elements colors ***************************/
 
@@ -29,14 +29,14 @@
     --input-text-focus: var(--palette9);
     --celsius-background: var(--palette6);
     --celsius-text: var(--palette1);
-    --group-header-background: var(--palette5);
+    --group-header-background: var(--palette8);
     --icon: var(--palette10);
     --menu-hover-text: var(--palette1);
     --menu-border: var(--palette7);
-    --menu-background: var(--palette5);
+    --menu-background: var(--palette2);
     --menu-hover-background: var(--palette7);
-    --menu-disabled-background: var(--palette8);
-    --menu-disabled-text: var(--palette9);
+    --menu-disabled-background: var(--palette2);
+    --menu-disabled-text: var(--palette6);
     --paging-button-border: var(--palette7);
     --paging-button-background: var(--palette8);
     --paging-button-text: var(--palette1);
